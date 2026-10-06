@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 AI Crop Information Assistant</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Arial, sans-serif;
+  background:#f4f8f3;
+  color:#17351d;
+  transition:.3s;
+}
+body.dark{background:#101812;color:#e8f5e9}
+
+header{
+  background:linear-gradient(135deg,#137a35,#31a852);
+  color:white;
+  padding:18px;
+  position:sticky;
+  top:0;
+  z-index:10;
+  box-shadow:0 3px 12px #0002;
+}
+.header{
+  max-width:1100px;
+  margin:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+}
+.logo{font-size:22px;font-weight:bold}
+.controls button{
+  border:0;
+  padding:9px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  margin-left:5px;
+}
+
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+
+.hero{
+  background:linear-gradient(135deg,#e7f7e9,#fff);
+  border-radius:20px;
+  padding:25px;
+  margin-bottom:20px;
+}
+.dark .hero{background:#17251a}
+
+.hero h1{font-size:30px;margin-bottom:8px}
+.hero p{color:#55705a;margin-bottom:15px}
+
+.search{
+  display:flex;
+  gap:10px;
+}
+.search input{
+  flex:1;
+  padding:14px;
+  border:1px solid #c7d8ca;
+  border-radius:12px;
+  font-size:16px;
+}
+.search button,.send{
+  background:#16813a;
+  color:white;
+  border:0;
+  border-radius:12px;
+  padding:13px 18px;
+  cursor:pointer;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;
+  margin:20px 0;
+}
+.card{
+  background:white;
+  padding:18px;
+  border-radius:16px;
+  box-shadow:0 3px 12px #0001;
+  cursor:pointer;
+  transition:.2s;
+}
+.card:hover{transform:translateY(-3px)}
+.dark .card{background:#18251b}
+.card .icon{font-size:30px;margin-bottom:8px}
+
+.chat{
+  background:white;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 3px 15px #0001;
+}
+.dark .chat{background:#18251b}
+
+.chat-title{
+  padding:17px;
+  border-bottom:1px solid #ddd;
+  font-weight:bold;
+}
+
+.messages{
+  height:420px;
+  overflow-y:auto;
+  padding:18px;
+}
+
+.message{
+  display:flex;
+  margin-bottom:15px;
+}
+.message.user{justify-content:flex-end}
+
+.bubble{
+  max-width:82%;
+  padding:12px 15px;
+  border-radius:15px;
+  line-height:1.5;
+  white-space:pre-wrap;
+}
+.ai .bubble{background:#eaf6ec}
+.user .bubble{background:#16813a;color:white}
+.dark .ai .bubble{background:#243428}
+
+.actions{
+  margin-top:7px;
+}
+.actions button{
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  margin-right:8px;
+}
+
+.chat-input{
+  display:flex;
+  gap:8px;
+  padding:12px;
+  border-top:1px solid #ddd;
+}
+.chat-input textarea{
+  flex:1;
+  resize:none;
+  border:1px solid #ccd8ce;
+  border-radius:12px;
+  padding:12px;
+  height:48px;
+}
+
+.status{
+  text-align:center;
+  padding:10px;
+  color:#777;
+  display:none;
+}
+
+.warning{
+  margin-top:18px;
+  background:#fff5d8;
+  padding:14px;
+  border-radius:12px;
+  font-size:14px;
+}
+
+.footer{
+  text-align:center;
+  padding:25px;
+  color:#657366;
+}
+
+@media(max-width:600px){
+ .header{flex-direction:column;align-items:flex-start}
+ .hero h1{font-size:24px}
+ .search{flex-direction:column}
+ .messages{height:55vh}
+ .bubble{max-width:90%}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header">
+    <div class="logo">🌾 AI Crop Assistant</div>
+    <div class="controls">
+      <button onclick="toggleTheme()">🌙</button>
+      <button onclick="clearChat()">🗑️ Clear</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+<section class="hero">
+  <h1>🌱 AI Crop Information Assistant</h1>
+  <p>
+    फसल, मिट्टी, सिंचाई, खाद, कीट और खेती से जुड़े सवाल AI से पूछें।
+  </p>
+
+  <div class="search">
+    <input id="cropSearch"
+      placeholder="जैसे: गेहूं की खेती कैसे करें?"
+      onkeydown="if(event.key==='Enter') askFromSearch()">
+    <button onclick="askFromSearch()">🔍 पूछें</button>
+  </div>
+</section>
+
+<section>
+  <h2>🌾 Quick Topics</h2>
+
+  <div class="cards">
+
+    <div class="card" onclick="quickAsk('गेहूं की खेती की पूरी जानकारी बताइए')">
+      <div class="icon">🌾</div>
+      <b>गेहूं</b>
+      <p>खेती की जानकारी</p>
+    </div>
+
+    <div class="card" onclick="quickAsk('धान की खेती कैसे करें?')">
+      <div class="icon">🌿</div>
+      <b>धान</b>
+      <p>खेती की जानकारी</p>
+    </div>
+
+    <div class="card" onclick="quickAsk('सोयाबीन की खेती की जानकारी बताइए')">
+      <div class="icon">🫘</div>
+      <b>सोयाबीन</b>
+      <p>खेती की जानकारी</p>
+    </div>
+
+    <div class="card" onclick="quickAsk('कपास की खेती के बारे में बताइए')">
+      <div class="icon">🌱</div>
+      <b>कपास</b>
+      <p>खेती की जानकारी</p>
+    </div>
+
+    <div class="card" onclick="quickAsk('फसल में कीट लगने पर क्या करें?')">
+      <div class="icon">🐛</div>
+      <b>कीट</b>
+      <p>कीट प्रबंधन</p>
+    </div>
+
+    <div class="card" onclick="quickAsk('फसल के लिए मिट्टी की जांच क्यों जरूरी है?')">
+      <div class="icon">🧪</div>
+      <b>मिट्टी</b>
+      <p>Soil information</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="chat">
+
+  <div class="chat-title">
+    🤖 AI Farming Assistant
+  </div>
+
+  <div id="messages" class="messages">
+    <div class="message ai">
+      <div>
+        <div class="bubble">
+नमस्ते! 👋 मैं आपका AI Crop Information Assistant हूँ।
+
+आप मुझसे फसल, मिट्टी, सिंचाई, खाद, कीट, रोग, बुवाई और कटाई से जुड़े सवाल पूछ सकते हैं।
+
+उदाहरण:
+• गेहूं की बुवाई कब करें?
+• धान में कौन-सी खाद उपयोग करें?
+• टमाटर में रोग क्यों लग रहा है?
+        </div>
+        <div class="actions">
+          <button onclick="speakText(this)">🔊 सुनें</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status" class="status">
+    🤖 AI जवाब तैयार कर रहा है...
+  </div>
+
+  <div class="chat-input">
+    <button onclick="startVoice()" title="Voice input">🎤</button>
+
+    <textarea id="userInput"
+      placeholder="अपना सवाल लिखें..."
+      onkeydown="handleEnter(event)"></textarea>
+
+    <button class="send" onclick="sendMessage()">➤</button>
+  </div>
+
+</section>
+
+<div class="warning">
+  ⚠️ <b>महत्वपूर्ण:</b> AI द्वारा दी गई कृषि सलाह सामान्य जानकारी के लिए है।
+  कीटनाशक/दवा/खाद की मात्रा तय करने से पहले स्थानीय कृषि विशेषज्ञ,
+  कृषि विभाग या उत्पाद के आधिकारिक लेबल की सलाह जरूर लें।
+</div>
+
+</main>
+
+<div class="footer">
+  🌾 AI Crop Information Assistant • किसान सहायता के लिए बनाया गया
+</div>
+
+<script>
+
+/* =====================================================
+   GROQ CONFIGURATION
+   =====================================================
+
+   IMPORTANT:
+   Browser-only projects expose the API key.
+   For a real/public website use a backend server.
+
+   Put your Groq API key below:
+*/
+const GROQ_API_KEY = "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";
+
+/*
+ Current Groq model:
+ openai/gpt-oss-120b
+
+ If your Groq account provides another current production
+ model, you can replace it here.
+*/
+const GROQ_MODEL = "openai/gpt-oss-120b";
+
+const GROQ_URL =
+"https://api.groq.com/openai/v1/chat/completions";
+
+
+const SYSTEM_PROMPT = `
+You are an AI Crop Information Assistant for Indian farmers.
+
+Your job is to provide useful, clear and practical agricultural
+information in Hindi, English or Hinglish.
+
+Topics include:
+- Crop cultivation
+- Seed selection
+- Sowing
+- Soil
+- Irrigation
+- Fertilizers
+- Nutrients
+- Pests
+- Crop diseases
+- Disease prevention
+- Harvesting
+- Crop rotation
+- Weather-related farming guidance
+- Storage
+- Basic market information
+- Sustainable farming
+
+Rules:
+1. Prefer simple language.
+2. If the user speaks Hindi, answer in Hindi.
+3. If the user speaks Hinglish, Hinglish is acceptable.
+4. Give structured answers with headings and bullet points.
+5. Never invent precise government schemes, prices or weather data.
+6. If current data is required, clearly say that live data is not available.
+7. For pesticide/fungicide/herbicide recommendations, avoid unsafe
+   exact dosing unless the product label and crop context are known.
+8. Encourage users to consult local agriculture officers or experts
+   for serious crop disease and pesticide decisions.
+9. Ask for crop, location, soil type and crop stage when those details
+   are necessary.
+10. Do not claim to diagnose a crop disease with certainty from text alone.
+11. Give practical and farmer-friendly answers.
+`;
+
+
+let conversation = [
+  {
+    role:"system",
+    content:SYSTEM_PROMPT
+  }
+];
+
+
+/* ---------- Utility ---------- */
+
+function escapeHTML(text){
+  return text
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+function addMessage(text,type){
+  const messages = document.getElementById("messages");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "message " + type;
+
+  const inner = document.createElement("div");
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML = escapeHTML(text);
+
+  inner.appendChild(bubble);
+
+  if(type === "ai"){
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    actions.innerHTML = `
+      <button onclick="copyText(this)">📋 Copy</button>
+      <button onclick="speakText(this)">🔊 सुनें</button>
+      <button onclick="likeAnswer()">👍</button>
+      <button onclick="dislikeAnswer()">👎</button>
+    `;
+
+    inner.appendChild(actions);
+  }
+
+  wrapper.appendChild(inner);
+  messages.appendChild(wrapper);
+
+  messages.scrollTop = messages.scrollHeight;
+}
+
+
+/* ---------- Send Message ---------- */
+
+async function sendMessage(){
+
+  const input = document.getElementById("userInput");
+  const question = input.value.trim();
+
+  if(!question) return;
+
+  if(GROQ_API_KEY === "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"){
+    addMessage(
+      "⚠️ पहले JavaScript में अपनी Groq API key डालें।",
+      "ai"
+    );
+    return;
+  }
+
+  addMessage(question,"user");
+
+  input.value = "";
+
+  conversation.push({
+    role:"user",
+    content:question
+  });
+
+  document.getElementById("status").style.display = "block";
+
+  try{
+
+    const response = await fetch(GROQ_URL,{
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer " + GROQ_API_KEY
+      },
+
+      body:JSON.stringify({
+        model:GROQ_MODEL,
+        messages:conversation,
+        temperature:0.4,
+        max_tokens:1200
+      })
+    });
+
+    const data = await response.json();
+
+    if(!response.ok){
+      throw new Error(
+        data?.error?.message || "Groq API error"
+      );
+    }
+
+    const answer =
+      data.choices?.[0]?.message?.content ||
+      "माफ कीजिए, जवाब नहीं मिला।";
+
+    conversation.push({
+      role:"assistant",
+      content:answer
+    });
+
+    addMessage(answer,"ai");
+
+  }catch(error){
+
+    console.error(error);
+
+    addMessage(
+      "❌ AI से जवाब प्राप्त नहीं हुआ।\n\n" +
+      "कृपया API key, internet connection और Groq model की जांच करें।",
+      "ai"
+    );
+
+  }finally{
+
+    document.getElementById("status").style.display = "none";
+
+  }
+}
+
+
+/* ---------- Search ---------- */
+
+function askFromSearch(){
+
+  const input = document.getElementById("cropSearch");
+
+  if(!input.value.trim()) return;
+
+  document.getElementById("userInput").value =
+    input.value.trim();
+
+  input.value = "";
+
+  sendMessage();
+}
+
+
+function quickAsk(question){
+
+  document.getElementById("userInput").value = question;
+
+  sendMessage();
+}
+
+
+/* ---------- Enter ---------- */
+
+function handleEnter(event){
+
+  if(event.key === "Enter" && !event.shiftKey){
+
+    event.preventDefault();
+
+    sendMessage();
+  }
+}
+
+
+/* ---------- Copy ---------- */
+
+function copyText(button){
+
+  const bubble =
+    button.parentElement.previousElementSibling;
+
+  navigator.clipboard.writeText(
+    bubble.innerText
+  );
+
+  button.innerText = "✅ Copied";
+
+  setTimeout(()=>{
+    button.innerText = "📋 Copy";
+  },1500);
+}
+
+
+/* ---------- Speech ---------- */
+
+function speakText(button){
+
+  const bubble =
+    button.parentElement.previousElementSibling;
+
+  const speech =
+    new SpeechSynthesisUtterance(
+      bubble.innerText
+    );
+
+  speech.lang = /[\u0900-\u097F]/.test(
+    bubble.innerText
+  ) ? "hi-IN" : "en-IN";
+
+  speech.rate = 0.95;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(speech);
+}
+
+
+/* ---------- Voice Input ---------- */
+
+function startVoice(){
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if(!SpeechRecognition){
+
+    alert(
+      "आपके browser में voice recognition उपलब्ध नहीं है।"
+    );
+
+    return;
+  }
+
+  const recognition =
+    new SpeechRecognition();
+
+  recognition.lang = "hi-IN";
+  recognition.interimResults = false;
+
+  recognition.onstart = ()=>{
+    document.getElementById("userInput")
+      .placeholder = "🎤 सुन रहा हूँ...";
+  };
+
+  recognition.onresult = event=>{
+
+    const text =
+      event.results[0][0].transcript;
+
+    document.getElementById("userInput")
+      .value = text;
+  };
+
+  recognition.onerror = ()=>{
+    alert("Voice input में समस्या हुई।");
+  };
+
+  recognition.onend = ()=>{
+    document.getElementById("userInput")
+      .placeholder = "अपना सवाल लिखें...";
+  };
+
+  recognition.start();
+}
+
+
+/* ---------- Clear ---------- */
+
+function clearChat(){
+
+  if(!confirm("क्या आप पूरी chat clear करना चाहते हैं?"))
+    return;
+
+  conversation = [
+    {
+      role:"system",
+      content:SYSTEM_PROMPT
+    }
+  ];
+
+  document.getElementById("messages").innerHTML = "";
+
+  addMessage(
+    "चैट clear हो गई। 🌱\n\nआप अपना कृषि सवाल पूछ सकते हैं।",
+    "ai"
+  );
+}
+
+
+/* ---------- Theme ---------- */
+
+function toggleTheme(){
+
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "cropTheme",
+    document.body.classList.contains("dark")
+      ? "dark"
+      : "light"
+  );
+}
+
+
+if(localStorage.getItem("cropTheme")==="dark"){
+  document.body.classList.add("dark");
+}
+
+
+/* ---------- Feedback ---------- */
+
+function likeAnswer(){
+  alert("धन्यवाद! 👍");
+}
+
+function dislikeAnswer(){
+  alert("धन्यवाद! आपकी feedback से assistant को बेहतर बनाया जा सकता है।");
+}
+
+</script>
+
+</body>
+</html>
